@@ -35,18 +35,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      # 安装 PNPM
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
       # 设置 Node.js
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
-      
-      # 安装 PNPM
-      - name: Install PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
       
       # 安装依赖
       - name: Install dependencies
@@ -94,18 +94,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      # 安装 PNPM
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
       # 设置 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           cache: 'pnpm'
-      
-      # 安装 PNPM
-      - name: Install PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
       
       # 安装依赖
       - name: Install dependencies
