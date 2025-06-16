@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && node fix.cjs",
-    "fix": "eslint --fix --quiet ."
+    "lint": "eslint --quiet .",
+    "fix": "eslint --fix --quiet .",
+    "prepare": "husky"
   },
   "author": "IndieKKY",
   "license": "MIT",
@@ -70,6 +72,7 @@
     "eslint-plugin-promise": "^6.0.1",
     "eslint-plugin-react": "^7.31.8",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.1.7",
     "postcss": "^8.4.19",
     "rollup-plugin-visualizer": "^5.8.3",
     "tailwindcss": "^3.2.4",

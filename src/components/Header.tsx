@@ -1,4 +1,4 @@
-import {IoIosArrowUp} from 'react-icons/all'
+import { IoIosArrowUp } from 'react-icons/io'
 import {useCallback} from 'react'
 import {useAppDispatch, useAppSelector} from '../hooks/redux'
 import {find, remove} from 'lodash-es'

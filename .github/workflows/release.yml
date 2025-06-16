@@ -1,0 +1,240 @@
+name: Build and Release Extension
+
+# 触发条件
+on:
+  # 推送到 master 分支
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*.*.*'  # 版本标签 (v1.0.0, v1.2.3, etc.)
+  
+  # Pull Request 到 master 分支
+  pull_request:
+    branches: [ master ]
+  
+  # 手动触发
+  workflow_dispatch:
+
+# 权限设置
+permissions:
+  contents: write  # 创建 release 需要写权限
+
+# 定义作业
+jobs:
+  # 构建作业 - 总是运行
+  build:
+    name: Build Extension
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+    
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # 设置 Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      
+      # 安装 PNPM
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      # 安装依赖
+      - name: Install dependencies
+        run: pnpm install
+      
+      # 代码检查
+      - name: Lint code
+        run: pnpm run lint
+      
+      # 构建扩展
+      - name: Build extension
+        run: pnpm run build
+      
+      # 验证构建输出
+      - name: Verify build output
+        run: |
+          if [ ! -f "dist/manifest.json" ]; then
+            echo "Build failed: dist/manifest.json not found"
+            exit 1
+          fi
+          if [ ! -d "dist/assets" ]; then
+            echo "Build failed: dist/assets directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+      
+      # 上传构建产物
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+  # 发布作业 - 仅在版本标签时运行
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    # 只有在 push 事件且标签匹配 v*.*.* 格式时才运行
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # 设置 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+      
+      # 安装 PNPM
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      # 安装依赖
+      - name: Install dependencies
+        run: pnpm install
+      
+      # 代码检查
+      - name: Lint code
+        run: pnpm run lint
+      
+      # 构建扩展
+      - name: Build extension
+        run: pnpm run build
+      
+      # 验证版本标签与 package.json 匹配
+      - name: Verify version tag
+        id: version
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          
+          echo "Tag version: $TAG_VERSION"
+          echo "Package version: $PACKAGE_VERSION"
+          
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "❌ Version mismatch: tag v$TAG_VERSION != package.json v$PACKAGE_VERSION"
+            exit 1
+          fi
+          
+          echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version tag matches package.json"
+      
+      # 打包扩展
+      - name: Package extension
+        run: |
+          cd dist
+          zip -r ../bilibili-subtitle-extractor-extension-v${{ steps.version.outputs.version }}.zip .
+          cd ..
+          
+          # 验证zip文件
+          if [ ! -f "bilibili-subtitle-extractor-extension-v${{ steps.version.outputs.version }}.zip" ]; then
+            echo "❌ Failed to create zip file"
+            exit 1
+          fi
+          
+          echo "✅ Extension packaged successfully"
+      
+      # 创建 GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Extension Release ${{ github.ref_name }}
+          body: |
+            ## 🚀 Bilibili字幕提取浏览器插件 ${{ github.ref_name }}
+            
+            ### 📦 安装方式
+            
+            #### 方法一：直接下载安装（推荐）
+            1. 下载下方的 `bilibili-subtitle-extractor-extension-v${{ steps.version.outputs.version }}.zip` 文件
+            2. 解压到本地文件夹
+            3. 打开Chrome浏览器，访问 `chrome://extensions/`
+            4. 启用右上角的"开发者模式"
+            5. 点击"加载已解压的扩展程序"
+            6. 选择解压后的文件夹
+            
+            #### 方法二：本地构建
+            ```bash
+            # 克隆项目
+            git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
+            cd bilibili-subtitle-extractor-extension
+            
+            # 安装依赖并构建
+            npm install
+            npm run build
+            
+            # 在Chrome中加载 dist 目录
+            ```
+            
+            ### ✨ 新功能
+            - 🎯 支持从任意Bilibili视频提取字幕
+            - ⚡ 优化与MCP服务器的WebSocket通信
+            - 🔗 支持生成带时间戳的视频跳转链接
+            - 📊 改进连接状态监控
+            
+            ### 🔧 使用说明
+            1. 确保已启动 [MCP服务器](https://github.com/yarnovo/bilibili-subtitle-extractor-mcp)
+            2. 访问任意Bilibili视频页面
+            3. 插件将自动连接到MCP服务器
+            4. 通过AI助手调用字幕提取功能
+            
+            ### 🔗 相关链接
+            - 🖥️ MCP服务器: [GitHub](https://github.com/yarnovo/bilibili-subtitle-extractor-mcp)
+            - 🐋 Docker镜像: [Docker Hub](https://hub.docker.com/r/yarnovo/bilibili-subtitle-extractor-mcp)
+            - 📖 完整文档: [README.md](./README.md)
+            
+            ---
+            
+            ### 📋 系统要求
+            - Chrome 88+ 或 Edge 88+
+            - 需要配合MCP服务器使用
+            
+            ### 🐛 问题反馈
+            如遇到问题，请在 [Issues](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/issues) 中反馈
+          files: |
+            bilibili-subtitle-extractor-extension-v${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false
+
+  # 状态检查作业
+  status-check:
+    name: Status Check
+    runs-on: ubuntu-latest
+    needs: [build, release]
+    if: always()
+    
+    steps:
+      - name: Check build results
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Build failed"
+            exit 1
+          fi
+          echo "✅ Build successful"
+      
+      - name: Check release results
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if [ "${{ needs.release.result }}" != "success" ]; then
+            echo "❌ Release failed"
+            exit 1
+          fi
+          echo "✅ Extension released successfully" 

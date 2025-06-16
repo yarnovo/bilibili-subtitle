@@ -12,14 +12,12 @@ import {
   setTempData
 } from '../redux/envReducer'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
-import {
-  AiOutlineAim,
-  AiOutlineCloseCircle,
-  FaRegArrowAltCircleDown,
-  IoWarning,
-  MdExpand,
-  RiTranslate
-} from 'react-icons/all'
+import { BsSearch } from 'react-icons/bs'
+import { MdExpand } from 'react-icons/md'
+import { RiTranslate } from 'react-icons/ri'
+import { AiOutlineAim, AiOutlineCloseCircle } from 'react-icons/ai'
+import { FaRegArrowAltCircleDown, FaClipboardList } from 'react-icons/fa'
+import { IoWarning } from 'react-icons/io5'
 import classNames from 'classnames'
 import toast from 'react-hot-toast'
 import SegmentCard from './SegmentCard'
@@ -32,7 +30,6 @@ import {
   SUMMARIZE_ALL_THRESHOLD,
   TITLE_HEIGHT
 } from '../consts/const'
-import { FaClipboardList } from 'react-icons/fa'
 import useTranslate from '../hooks/useTranslate'
 import { openUrl } from '@kky002/kky-util'
 import useKeyService from '../hooks/useKeyService'

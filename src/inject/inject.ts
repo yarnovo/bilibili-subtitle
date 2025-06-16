@@ -1,6 +1,7 @@
 import { TOTAL_HEIGHT_DEF, HEADER_HEIGHT, TOTAL_HEIGHT_MIN, TOTAL_HEIGHT_MAX, IFRAME_ID, STORAGE_ENV, DEFAULT_USE_PORT } from '@/consts/const'
 import { AllExtensionMessages, AllInjectMessages, AllAPPMessages } from '@/message-typings'
 import { InjectMessaging } from '@kky002/kky-message'
+import { InjectWebSocketService } from './websocketService'
 
 const debug = (...args: any[]) => {
   console.debug('[Inject]', ...args)
@@ -379,4 +380,7 @@ const debug = (...args: any[]) => {
     refreshVideoInfo().catch(console.error)
     refreshSubtitles()
   }, 1000)
+
+  // 初始化WebSocket服务
+  const injectWebSocketService = new InjectWebSocketService()
 })()
