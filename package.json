@@ -11,9 +11,7 @@
     "lint": "eslint --quiet .",
     "fix": "eslint --fix --quiet .",
     "prepare": "husky",
-    "prerelease:alpha": "npm version prerelease --preid=alpha",
-    "prerelease:beta": "npm version prerelease --preid=beta",
-    "prerelease:rc": "npm version prerelease --preid=rc"
+    "postversion": "git push origin --follow-tags"
   },
   "author": "IndieKKY",
   "license": "MIT",
