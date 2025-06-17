@@ -6,7 +6,8 @@ on:
   push:
     branches: [ master ]
     tags:
-      - 'v*.*.*'  # 版本标签 (v1.0.0, v1.2.3, etc.)
+      - 'v*.*.*'          # 正式版本标签 (v1.0.0, v1.2.3, etc.)
+      - 'v*.*.*-*'        # 预发布版本标签 (v1.2.4-alpha.0, v1.0.0-beta.1, etc.)
   
   # Pull Request 到 master 分支
   pull_request:
@@ -134,6 +135,15 @@ jobs:
             exit 1
           fi
           
+          # 检测是否为预发布版本
+          if [[ "$TAG_VERSION" =~ -.*$ ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "🔄 Detected prerelease version: $TAG_VERSION"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "🚀 Detected stable version: $TAG_VERSION"
+          fi
+          
           echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
           echo "✅ Version tag matches package.json"
       
@@ -157,13 +167,15 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          name: Extension Release ${{ github.ref_name }}
+          name: ${{ steps.version.outputs.is_prerelease == 'true' && format('Prerelease {0}', github.ref_name) || format('Extension Release {0}', github.ref_name) }}
           body: |
-            ## 🚀 Bilibili字幕提取浏览器插件 ${{ github.ref_name }}
+            ## ${{ steps.version.outputs.is_prerelease == 'true' && '🔄 Prerelease' || '🚀 Release' }} ${{ github.ref_name }}
+            
+            ${{ steps.version.outputs.is_prerelease == 'true' && '⚠️ **这是一个预发布版本，可能包含未完全测试的功能，建议在生产环境中谨慎使用。**' || '' }}
             
             ### 📋 更新内容
             查看本版本的详细更新内容和代码变更，请访问：
-            **[📖 查看 ${{ github.ref_name }} 版本更新内容](${{ github.server_url }}/${{ github.repository }}/commits/${{ github.ref_name }})**
+            **[📖 查看 ${{ github.ref_name }} 版本更新内容](https://github.com/yarnovo/bilibili-subtitle/commits/${{ github.ref_name }})**
             
             ### 📦 安装方式
             
@@ -178,12 +190,12 @@ jobs:
             #### 方法二：本地构建
             ```bash
             # 克隆项目
-            git clone https://github.com/yarnovo/bilibili-subtitle-extractor-extension.git
-            cd bilibili-subtitle-extractor-extension
+            git clone https://github.com/yarnovo/bilibili-subtitle.git
+            cd bilibili-subtitle/bilibili-subtitle
             
             # 安装依赖并构建
-            npm install
-            npm run build
+            pnpm install
+            pnpm run build
             
             # 在Chrome中加载 dist 目录
             ```
@@ -197,7 +209,7 @@ jobs:
             ### 🔗 相关链接
             - 🖥️ MCP服务器: [GitHub](https://github.com/yarnovo/bilibili-subtitle-extractor-mcp)
             - 🐋 Docker镜像: [Docker Hub](https://hub.docker.com/r/yarnovo/bilibili-subtitle-extractor-mcp)
-            - 📖 完整文档: [README.md](./README.md)
+            - 📖 完整文档: [README.md](https://github.com/yarnovo/bilibili-subtitle/blob/main/bilibili-subtitle/README.md)
             
             ---
             
@@ -206,11 +218,11 @@ jobs:
             - 需要配合MCP服务器使用
             
             ### 🐛 问题反馈
-            如遇到问题，请在 [Issues](https://github.com/yarnovo/bilibili-subtitle-extractor-extension/issues) 中反馈
+            如遇到问题，请在 [Issues](https://github.com/yarnovo/bilibili-subtitle/issues) 中反馈
           files: |
             bilibili-subtitle-extractor-extension-v${{ steps.version.outputs.version }}.zip
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
 
   # 状态检查作业
   status-check:

@@ -10,7 +10,10 @@
     "build": "tsc && vite build && node fix.cjs",
     "lint": "eslint --quiet .",
     "fix": "eslint --fix --quiet .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prerelease:alpha": "npm version prerelease --preid=alpha",
+    "prerelease:beta": "npm version prerelease --preid=beta",
+    "prerelease:rc": "npm version prerelease --preid=rc"
   },
   "author": "IndieKKY",
   "license": "MIT",
